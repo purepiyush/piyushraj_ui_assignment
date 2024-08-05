@@ -3,8 +3,8 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 
 const ROLES = {
-  CAMPAIGN_MANAGER:["CAMPAIGN_MANAGER"],
-  NATIONAL_SUPERVISOR:["NATIONAL_SUPERVISOR"]
+  CAMPAIGN_MANAGER: ["CAMPAIGN_MANAGER"],
+  NATIONAL_SUPERVISOR: ["NATIONAL_SUPERVISOR"],
 };
 
 /**
@@ -16,7 +16,7 @@ const ROLES = {
  */
 const CampaignCard = () => {
   if (!Digit.Utils.didEmployeeHasAtleastOneRole(Object.values(ROLES).flatMap((e) => e))) {
-  return null;
+    return null;
   }
 
   const { t } = useTranslation();
@@ -44,15 +44,20 @@ const CampaignCard = () => {
   //   reqCriteria
   // );
   let links = [
-
     {
       label: t("ACTION_TEST_SETUP_CAMPAIGN"),
       link: `/${window?.contextPath}/employee/campaign/setup-campaign`,
-      roles: ROLES.CAMPAIGN_MANAGER
+      roles: ROLES.CAMPAIGN_MANAGER,
     },
     {
       label: t("ACTION_TEST_MY_CAMPAIGN"),
       link: `/${window?.contextPath}/employee/campaign/my-campaign`,
+      roles: ROLES.CAMPAIGN_MANAGER,
+      // count: isLoading?"-":data
+    },
+    {
+      label: t("ACTION_TEST_CHECKLIST_CREATE"),
+      link: `/${window?.contextPath}/employee/campaign/checklist/create?type=SMC&name=MR_DN_TEST&flow=REFERRAL&role=HEALTH_FACILITY_SUPERVISOR`,
       roles: ROLES.CAMPAIGN_MANAGER,
       // count: isLoading?"-":data
     },
@@ -67,13 +72,13 @@ const CampaignCard = () => {
       link: "/digit-ui/employee/dss/landing/national-health-dashboard",
       roles: ROLES.NATIONAL_SUPERVISOR,
       // count: isLoading?"-":data
-    }
+    },
   ];
 
   links = links.filter((link) => (link?.roles && link?.roles?.length > 0 ? Digit.Utils.didEmployeeHasAtleastOneRole(link?.roles) : true));
 
   const propsForModuleCard = {
-    Icon: <SVG.Support fill="white" height="36" width="36"/>,
+    Icon: <SVG.Support fill="white" height="36" width="36" />,
     moduleName: t("ACTION_TEST_CAMPAIGN"),
     kpis: [],
     links: links,

@@ -14,7 +14,6 @@ const businessServiceMap = {};
 const inboxModuleNameMap = {};
 
 // const onActionSelect = (value, row) => {
-//   console.log("value")
 //   switch (value?.code) {
 //     case "ACTION_LABEL_UPDATE_DATES":
 //       window.history.pushState(
@@ -33,7 +32,6 @@ const inboxModuleNameMap = {};
 //       setTimeline(true);
 //       break;
 //     default:
-//       console.log(value);
 //       break;
 //   }
 // };

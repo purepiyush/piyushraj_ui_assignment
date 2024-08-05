@@ -33,6 +33,9 @@ import UpdateDatesWithBoundaries from "./pages/employee/UpdateDatesWithBoundarie
 import DateWithBoundary from "./components/DateWithBoundary";
 import BoundaryWithDate from "./components/BoundaryWithDate";
 import DateAndCycleUpdate from "./pages/employee/DateAndCycleUpdate";
+import CreateChecklist from "./pages/employee/CreateChecklist";
+import CreateQuestion from "./components/CreateQuestion";
+import CreateQuestionContext from "./components/CreateQuestionContext";
 
 /**
  * The CampaignModule function fetches store data based on state code, module code, and language, and
@@ -99,7 +102,9 @@ const componentsToRegister = {
   DateWithBoundary,
   BoundaryWithDate,
   DateAndCycleUpdate,
-  TimelineComponent
+  TimelineComponent,
+  CreateChecklist,
+  CreateQuestion : CreateQuestionContext,
 };
 
 const overrideHooks = () => {

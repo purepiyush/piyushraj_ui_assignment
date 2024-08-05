@@ -66,7 +66,7 @@ const BoundaryWithDate = ({ project, props, onSelect, dateReducerDispatch }) => 
   return (
     <Card className={"boundary-with-container"}>
       <Header className="header">{t(`${project?.address?.boundary}`)}</Header>
-      <LabelFieldPair style={{ display: "grid", gridTemplateColumns: "13rem 2fr", alignItems: "start" }}>
+      <LabelFieldPair style={{ display: "grid", gridTemplateColumns: "13rem 2fr", alignItems: "start", gap: "1rem" }}>
         <div className="campaign-dates">
           <p>{t(`HCM_CAMPAIGN_DATES`)}</p>
           <span className="mandatory-date">*</span>
