@@ -1,8 +1,8 @@
 import config from './../config';
-import { produceModifiedMessages } from '../kafka/Listener';
+import { produceModifiedMessages } from "../kafka/Producer";;
 import { v4 as uuidv4 } from 'uuid';
 import { executeQuery } from './db';
-import { processTrackStatuses, processTrackTypes } from '../config/constants';
+import { processTrackForUi, processTrackStatuses, processTrackTypes } from '../config/constants';
 import { logger } from './logger';
 
 async function getProcessDetails(id: string, type?: string): Promise<any[]> {
@@ -32,12 +32,13 @@ async function getProcessDetails(id: string, type?: string): Promise<any[]> {
         logger.info('No process details found');
         return [];
     }
-
+    const uiSet = new Set(processTrackForUi.map((item: any) => item));
     return queryResponse.rows.map((result: any) => ({
         id: result.id,
         campaignId: result.campaignid,
         type: result.type,
         status: result.status,
+        showInUi: uiSet.has(result.type),
         details: result.details,
         additionalDetails: result.additionaldetails,
         createdTime: parseInt(result.createdtime, 10),
@@ -80,20 +81,20 @@ async function handleFailedStatus(
     const failedStatusArray = processDetailsArray.filter((processDetail: any) => processDetail.status === processTrackStatuses.failed);
     if (failedStatusArray.length > 0) {
         logger.info('Process already failed, nothing to persist');
-        updateToBeCompletedProcess(toBeCompletedProcessDetails, status, details, additionalDetails, config?.kafka?.KAFKA_UPDATE_PROCESS_TRACK_TOPIC);
+        await updateToBeCompletedProcess(toBeCompletedProcessDetails, status, details, additionalDetails, config?.kafka?.KAFKA_UPDATE_PROCESS_TRACK_TOPIC);
         return;
     }
     if (inProgressProcessDetails.length > 0) {
         logger.info('Generic fail occured so changing the lastest inprogress status to failed');
-        updateAndProduceMessage(inProgressProcessDetails[inProgressProcessDetails.length - 1], status, details, additionalDetails, config?.kafka?.KAFKA_UPDATE_PROCESS_TRACK_TOPIC);
+        await updateAndProduceMessage(inProgressProcessDetails[inProgressProcessDetails.length - 1], status, details, additionalDetails, config?.kafka?.KAFKA_UPDATE_PROCESS_TRACK_TOPIC);
     } else {
         logger.info('No inprogress process found, creating a new processDetail to failed');
-        createAndProduceNewProcessDetail(campaignId, type, status, details, additionalDetails, config?.kafka?.KAFKA_SAVE_PROCESS_TRACK_TOPIC);
+        await createAndProduceNewProcessDetail(campaignId, type, status, details, additionalDetails, config?.kafka?.KAFKA_SAVE_PROCESS_TRACK_TOPIC);
     }
-    updateToBeCompletedProcess(toBeCompletedProcessDetails, status, details, additionalDetails, config?.kafka?.KAFKA_UPDATE_PROCESS_TRACK_TOPIC);
+    await updateToBeCompletedProcess(toBeCompletedProcessDetails, status, details, additionalDetails, config?.kafka?.KAFKA_UPDATE_PROCESS_TRACK_TOPIC);
 }
 
-function updateToBeCompletedProcess(
+async function updateToBeCompletedProcess(
     processDetailsArray: any[],
     status: string,
     details?: Record<string, any>,
@@ -103,7 +104,7 @@ function updateToBeCompletedProcess(
         details.error = "HCM_PROCESS_TRACK_PREVIOUS_PROCESS_FAILED"
     if (processDetailsArray.length > 0) {
         for (let i = 0; i < processDetailsArray.length; i++) {
-            updateAndProduceMessage(processDetailsArray[i], status, details, additionalDetails, kafkaTopic);
+            await updateAndProduceMessage(processDetailsArray[i], status, details, additionalDetails, kafkaTopic);
         }
     }
 }
@@ -127,27 +128,27 @@ async function handleNonFailedStatus(
 }
 
 // Updates an existing process detail and produces the message
-function updateAndProduceMessage(
+async function updateAndProduceMessage(
     processDetails: any,
     status: string,
     details?: Record<string, any>,
     additionalDetails?: Record<string, any>,
     kafkaTopic?: string
-): void {
+) {
     updateProcessDetails(processDetails, processDetails.type, status, details, additionalDetails);
     const produceMessage: any = { processDetails };
-    produceModifiedMessages(produceMessage, kafkaTopic);
+    await produceModifiedMessages(produceMessage, kafkaTopic);
 }
 
 // Creates a new process detail and produces the message
-function createAndProduceNewProcessDetail(
+async function createAndProduceNewProcessDetail(
     campaignId: string,
     type: string,
     status: string,
     details?: Record<string, any>,
     additionalDetails?: Record<string, any>,
     kafkaTopic?: string
-): void {
+) {
     const currentTime = Date.now();
     const processDetail: any = {
         id: uuidv4(),
@@ -162,7 +163,7 @@ function createAndProduceNewProcessDetail(
 
     updateProcessDetails(processDetail, type, status, details, additionalDetails);
     const produceMessage: any = { processDetails: [processDetail] };
-    produceModifiedMessages(produceMessage, kafkaTopic);
+    await produceModifiedMessages(produceMessage, kafkaTopic);
 }
 
 
@@ -180,7 +181,7 @@ function updateProcessDetails(
     processDetails.status = status;
 }
 
-function createProcessTracks(campaignId: string) {
+async function createProcessTracks(campaignId: string) {
     logger.info(`Creating process tracks for campaignId: ${campaignId}`);
 
     const processDetailsArray: any[] = [];
@@ -205,7 +206,7 @@ function createProcessTracks(campaignId: string) {
 
     logger.info(`Created ${processDetailsArray.length} process tracks`);
     const produceMessage: any = { processDetails: processDetailsArray }
-    produceModifiedMessages(produceMessage, config?.kafka?.KAFKA_SAVE_PROCESS_TRACK_TOPIC);
+    await produceModifiedMessages(produceMessage, config?.kafka?.KAFKA_SAVE_PROCESS_TRACK_TOPIC);
 }
 
 function getOrderedDetailsArray(toBeCompletedArray: any[]) {

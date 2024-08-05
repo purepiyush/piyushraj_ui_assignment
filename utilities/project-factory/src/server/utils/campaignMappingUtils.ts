@@ -1,9 +1,9 @@
 import createAndSearch from "../config/createAndSearch";
 import config from "../config";
-import { getDataFromSheet, throwError } from "./genericUtils";
+import { getDataFromSheet, getLocalizedMessagesHandlerViaRequestInfo, throwError } from "./genericUtils";
 import { getFormattedStringForDebug, logger } from "./logger";
 import { defaultheader, httpRequest } from "./request";
-import { produceModifiedMessages } from "../kafka/Listener";
+import { produceModifiedMessages } from "../kafka/Producer";
 import { enrichAndPersistCampaignWithError, getLocalizedName } from "./campaignUtils";
 import { campaignStatuses, resourceDataStatuses } from "../config/constants";
 import { createCampaignService } from "../service/campaignManageService";
@@ -230,6 +230,8 @@ async function getProjectMappingBody(messageObject: any, boundaryWithProject: an
 
 async function fetchAndMap(resources: any[], messageObject: any) {
     await persistTrack(messageObject?.Campaign?.id, processTrackTypes.prepareResourceForMapping, processTrackStatuses.inprogress)
+    const localizationMap = await getLocalizedMessagesHandlerViaRequestInfo(messageObject?.RequestInfo, messageObject?.Campaign?.tenantId);
+    messageObject.localizationMap = localizationMap
     try {
         const localizationMap = messageObject?.localizationMap;
         const sheetName: any = {
@@ -294,7 +296,7 @@ async function processCampaignMapping(messageObject: any) {
         logger.info("Campaign Already In Progress and Mapped");
     }
     else {
-        await persistTrack(id, processTrackTypes.confirmingResouceCreation, processTrackStatuses.inprogress);
+        await persistTrack(id, processTrackTypes.confirmingResourceCreation, processTrackStatuses.inprogress);
         try {
             var completedResources: any = []
             var resources = [];
@@ -333,10 +335,10 @@ async function processCampaignMapping(messageObject: any) {
             }
         } catch (error: any) {
             console.log(error)
-            await persistTrack(id, processTrackTypes.confirmingResouceCreation, processTrackStatuses.failed, { error: String((error?.message + (error?.description ? ` : ${error?.description}` : '')) || error) });
+            await persistTrack(id, processTrackTypes.confirmingResourceCreation, processTrackStatuses.failed, { error: String((error?.message + (error?.description ? ` : ${error?.description}` : '')) || error) });
             throw new Error(error)
         }
-        await persistTrack(id, processTrackTypes.confirmingResouceCreation, processTrackStatuses.completed);
+        await persistTrack(id, processTrackTypes.confirmingResourceCreation, processTrackStatuses.completed);
         await fetchAndMap(resources, messageObject);
     }
 }
@@ -415,23 +417,26 @@ export async function handleFacilityMapping(mappingArray: any, campaignId: any, 
     await persistTrack(campaignId, processTrackTypes.facilityMapping, processTrackStatuses.completed);
 }
 
-export async function processMapping(messageObject: any) {
+export async function processMapping(mappingObject: any) {
     try {
-        if (messageObject?.mappingArray && Array.isArray(messageObject?.mappingArray) && messageObject?.mappingArray?.length > 0) {
-            const resourceMappingArray = messageObject?.mappingArray?.filter((mappingObject: any) => mappingObject?.type == "resource");
-            const facilityMappingArray = messageObject?.mappingArray?.filter((mappingObject: any) => mappingObject?.type == "facility");
-            const staffMappingArray = messageObject?.mappingArray?.filter((mappingObject: any) => mappingObject?.type == "staff");
-            await handleResourceMapping(resourceMappingArray, messageObject?.CampaignDetails?.id, messageObject);
-            await handleFacilityMapping(facilityMappingArray, messageObject?.CampaignDetails?.id, messageObject);
-            await handleStaffMapping(staffMappingArray, messageObject?.CampaignDetails?.id, messageObject);
+        if (mappingObject?.mappingArray && Array.isArray(mappingObject?.mappingArray) && mappingObject?.mappingArray?.length > 0) {
+            const resourceMappingArray = mappingObject?.mappingArray?.filter((mappingObject: any) => mappingObject?.type == "resource");
+            const facilityMappingArray = mappingObject?.mappingArray?.filter((mappingObject: any) => mappingObject?.type == "facility");
+            const staffMappingArray = mappingObject?.mappingArray?.filter((mappingObject: any) => mappingObject?.type == "staff");
+            await handleResourceMapping(resourceMappingArray, mappingObject?.CampaignDetails?.id, mappingObject);
+            await handleFacilityMapping(facilityMappingArray, mappingObject?.CampaignDetails?.id, mappingObject);
+            await handleStaffMapping(staffMappingArray, mappingObject?.CampaignDetails?.id, mappingObject);
         }
-        logger.info("Mapping completed successfully for campaign: " + messageObject?.CampaignDetails?.id);
-        messageObject.CampaignDetails.status = campaignStatuses.inprogress
-        produceModifiedMessages(messageObject, config?.kafka?.KAFKA_UPDATE_PROJECT_CAMPAIGN_DETAILS_TOPIC)
-        await persistTrack(messageObject?.CampaignDetails?.id, processTrackTypes.campaignCreation, processTrackStatuses.completed)
+        logger.info("Mapping completed successfully for campaign: " + mappingObject?.CampaignDetails?.id);
+        mappingObject.CampaignDetails.status = campaignStatuses.inprogress
+        const produceMessage: any = {
+            CampaignDetails: mappingObject?.CampaignDetails
+        }
+        await produceModifiedMessages(produceMessage, config?.kafka?.KAFKA_UPDATE_PROJECT_CAMPAIGN_DETAILS_TOPIC)
+        await persistTrack(mappingObject?.CampaignDetails?.id, processTrackTypes.campaignCreation, processTrackStatuses.completed)
     } catch (error) {
         logger.error("Error in campaign mapping: " + error);
-        await enrichAndPersistCampaignWithError(messageObject, error);
+        await enrichAndPersistCampaignWithError(mappingObject, error);
     }
 }
 

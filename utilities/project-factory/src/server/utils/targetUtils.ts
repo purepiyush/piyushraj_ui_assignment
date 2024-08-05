@@ -1,5 +1,26 @@
-import config from '../config/index'
-import { getLocalizedName } from './campaignUtils';
+import config from '../config'
+import { checkIfSourceIsMicroplan, getConfigurableColumnHeadersBasedOnCampaignType, getLocalizedName } from './campaignUtils';
+import _ from 'lodash';
+import { replicateRequest } from './genericUtils';
+import { callGenerate } from './generateUtils';
+
+
+async function generateDynamicTargetHeaders(request: any, campaignObject: any, localizationMap?: any) {
+    const isSourceMicroplan = checkIfSourceIsMicroplan(campaignObject);
+    let headerColumnsAfterHierarchy: any;
+    if (isDynamicTargetTemplateForProjectType(campaignObject?.projectType) && campaignObject.deliveryRules && campaignObject.deliveryRules.length > 0 && !isSourceMicroplan) {
+        const modifiedUniqueDeliveryConditions = modifyDeliveryConditions(campaignObject.deliveryRules);
+        headerColumnsAfterHierarchy = generateTargetColumnsBasedOnDeliveryConditions(modifiedUniqueDeliveryConditions, localizationMap);
+
+    }
+    else {
+        headerColumnsAfterHierarchy = await getConfigurableColumnHeadersBasedOnCampaignType(request);
+        headerColumnsAfterHierarchy.shift();
+    }
+    return headerColumnsAfterHierarchy;
+}
+
+
 function modifyDeliveryConditions(dataa: any[]): any {
     let resultSet = new Set<string>();
     dataa.forEach((delivery) => {
@@ -43,20 +64,22 @@ function modifyDeliveryConditions(dataa: any[]): any {
 
 
 function generateTargetColumnsBasedOnDeliveryConditions(uniqueDeliveryConditions: any, localizationMap?: any) {
-    const targetColumnsBasedOnDeliveryConditions: string[] = [config?.boundary?.boundaryCode];
-
-    uniqueDeliveryConditions.forEach((str: any) => {
+    const targetColumnsBasedOnDeliveryConditions: string[] = [];
+    uniqueDeliveryConditions.forEach((str: any, index: number) => {
         const uniqueDeliveryConditionsObject = JSON.parse(str); // Parse JSON string into object
         const targetColumnString = createTargetString(uniqueDeliveryConditionsObject, localizationMap);
         targetColumnsBasedOnDeliveryConditions.push(targetColumnString);
     });
-
+    if (targetColumnsBasedOnDeliveryConditions.length > 18) {
+        targetColumnsBasedOnDeliveryConditions.splice(18);
+        targetColumnsBasedOnDeliveryConditions.push(getLocalizedName("OTHER_TARGETS", localizationMap));
+    }
     return targetColumnsBasedOnDeliveryConditions;
 }
 
 function createTargetString(uniqueDeliveryConditionsObject: any, localizationMap?: any) {
     let targetString: any;
-    const prefix = getLocalizedName("HCM_ADMIN_CONSOLE_TARGET", localizationMap);
+    const prefix = getLocalizedName("HCM_ADMIN_CONSOLE_TARGET_SMC", localizationMap);
     const attributeCode = getLocalizedName(uniqueDeliveryConditionsObject.attribute.code.toUpperCase(), localizationMap);
     const operatorMessage = getLocalizedName(uniqueDeliveryConditionsObject.operator.code, localizationMap);
     const localizedFROM = getLocalizedName("FROM", localizationMap);
@@ -69,7 +92,46 @@ function createTargetString(uniqueDeliveryConditionsObject: any, localizationMap
     return targetString;
 }
 
+async function updateTargetColumnsIfDeliveryConditionsDifferForSMC(request: any) {
+    const existingCampaignDetails = request?.body?.ExistingCampaignDetails;
+    if (existingCampaignDetails) {
+        if (isDynamicTargetTemplateForProjectType(request?.body?.CampaignDetails?.projectType) && config?.isCallGenerateWhenDeliveryConditionsDiffer && !_.isEqual(existingCampaignDetails?.deliveryRules, request?.body?.CampaignDetails?.deliveryRules)) {
+            const newRequestBody = {
+                RequestInfo: request?.body?.RequestInfo,
+                Filters: {
+                    boundaries: request?.body?.CampaignDetails?.boundaries
+                }
+            };
+
+            const { query } = request;
+            const params = {
+                tenantId: request?.body?.CampaignDetails?.tenantId,
+                forceUpdate: 'true',
+                hierarchyType: request?.body?.CampaignDetails?.hierarchyType,
+                campaignId: request?.body?.CampaignDetails?.id
+            };
+
+            const newParamsBoundary = { ...query, ...params, type: "boundary" };
+            const newRequestBoundary = replicateRequest(request, newRequestBody, newParamsBoundary);
+            await callGenerate(newRequestBoundary, "boundary", true);
+        }
+    }
+}
+
+function isDynamicTargetTemplateForProjectType(projectType: string) {
+    const projectTypesFromConfig = config?.enableDynamicTemplateFor;
+    const projectTypesArray = projectTypesFromConfig ? projectTypesFromConfig.split(',') : [];
+    return projectTypesArray.includes(projectType);
+}
+
+
+
+
+
 export {
     modifyDeliveryConditions,
-    generateTargetColumnsBasedOnDeliveryConditions
+    generateTargetColumnsBasedOnDeliveryConditions,
+    generateDynamicTargetHeaders,
+    updateTargetColumnsIfDeliveryConditionsDifferForSMC,
+    isDynamicTargetTemplateForProjectType
 };

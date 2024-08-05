@@ -3,12 +3,12 @@ import { v4 as uuidv4 } from 'uuid';
 import { httpRequest } from "../utils/request";
 import { getFormattedStringForDebug, logger } from "../utils/logger";
 import createAndSearch from '../config/createAndSearch';
-import { getDataFromSheet, generateActivityMessage, throwError, translateSchema, replicateRequest } from "../utils/genericUtils";
+import { getDataFromSheet, generateActivityMessage, throwError, translateSchema, replicateRequest, appendProjectTypeToCapacity } from "../utils/genericUtils";
 import { immediateValidationForTargetSheet, validateSheetData, validateTargetSheetData } from '../validators/campaignValidators';
 import { callMdmsTypeSchema, getCampaignNumber } from "./genericApis";
-import { boundaryBulkUpload, convertToTypeData, generateHierarchy, generateProcessedFileAndPersist, getLocalizedName, reorderBoundariesOfDataAndValidate } from "../utils/campaignUtils";
+import { boundaryBulkUpload, convertToTypeData, generateHierarchy, generateProcessedFileAndPersist, getBoundaryOnWhichWeSplit, getLocalizedName, reorderBoundariesOfDataAndValidate, checkIfSourceIsMicroplan } from "../utils/campaignUtils";
 const _ = require('lodash');
-import { produceModifiedMessages } from "../kafka/Listener";
+import { produceModifiedMessages } from "../kafka/Producer";
 import { createDataService } from "../service/dataManageService";
 import { searchProjectTypeCampaignService } from "../service/campaignManageService";
 import { getExcelWorkbookFromFileURL } from "../utils/excelUtils";
@@ -530,10 +530,12 @@ async function processValidate(request: any, localizationMap?: { [key: string]: 
   const createAndSearchConfig = createAndSearch[type]
   const dataFromSheet = await getDataFromSheet(request, request?.body?.ResourceDetails?.fileStoreId, request?.body?.ResourceDetails?.tenantId, createAndSearchConfig, null, localizationMap)
   if (type == 'boundaryWithTarget') {
+    let differentTabsBasedOnLevel = await getBoundaryOnWhichWeSplit(request);
+    differentTabsBasedOnLevel = getLocalizedName(`${request?.body?.ResourceDetails?.hierarchyType}_${differentTabsBasedOnLevel}`.toUpperCase(), localizationMap);
     logger.info("target sheet format validation started");
-    await immediateValidationForTargetSheet(dataFromSheet, localizationMap);
+    await immediateValidationForTargetSheet(request, dataFromSheet, differentTabsBasedOnLevel, localizationMap);
     logger.info("target sheet format validation completed and starts with data validation");
-    validateTargetSheetData(dataFromSheet, request, createAndSearchConfig?.boundaryValidation, localizationMap);
+    validateTargetSheetData(dataFromSheet, request, createAndSearchConfig?.boundaryValidation, differentTabsBasedOnLevel, localizationMap);
   }
 
   else {
@@ -728,7 +730,7 @@ async function performAndSaveResourceActivity(request: any, createAndSearchConfi
       }
       _.set(newRequestBody, createAndSearchConfig?.createBulkDetails?.createPath, chunkData);
       creationTime = Date.now();
-      if (type == "facility") {
+      if (type == "facility" || type == "facilityMicroplan") {
         await handeFacilityProcess(request, createAndSearchConfig, params, activities, newRequestBody);
       }
       else if (type == "user") {
@@ -786,12 +788,12 @@ async function handleResouceDetailsError(request: any, error: any) {
     if (request?.body?.ResourceDetails?.action == "create") {
       persistMessage.ResourceDetails.additionalDetails = { error: stringifiedError }
     }
-    produceModifiedMessages(persistMessage, config?.kafka?.KAFKA_UPDATE_RESOURCE_DETAILS_TOPIC);
+    await produceModifiedMessages(persistMessage, config?.kafka?.KAFKA_UPDATE_RESOURCE_DETAILS_TOPIC);
   }
   if (request?.body?.Activities && Array.isArray(request?.body?.Activities) && request?.body?.Activities.length > 0) {
     logger.info("Waiting for 2 seconds");
     await new Promise(resolve => setTimeout(resolve, 2000));
-    produceModifiedMessages(request?.body, config?.kafka?.KAFKA_CREATE_RESOURCE_ACTIVITY_TOPIC);
+    await produceModifiedMessages(request?.body, config?.kafka?.KAFKA_CREATE_RESOURCE_ACTIVITY_TOPIC);
   }
 }
 
@@ -841,13 +843,38 @@ async function processCreate(request: any, localizationMap?: any) {
     boundaryBulkUpload(request, localizationMap);
   }
   else {
-    const createAndSearchConfig = createAndSearch[type]
+    // console.log(`Source is MICROPLAN -->`, source);
+    let createAndSearchConfig: any;
+    createAndSearchConfig = createAndSearch[type];
+    const responseFromCampaignSearch = await getCampaignSearchResponse(request);
+    const campaignType = responseFromCampaignSearch?.CampaignDetails[0]?.projectType;
+    if (checkIfSourceIsMicroplan(request?.body?.ResourceDetails)) {
+      logger.info(`Data create Source is MICROPLAN`);
+      if (createAndSearchConfig?.parseArrayConfig?.parseLogic) {
+        createAndSearchConfig.parseArrayConfig.parseLogic = createAndSearchConfig.parseArrayConfig.parseLogic.map(
+          (item: any) => {
+            if (item.sheetColumn === "E") {
+              item.sheetColumnName += `_${campaignType}`;
+            }
+            return item;
+          }
+        );
+      }
+    }
+
     const dataFromSheet = await getDataFromSheet(request, request?.body?.ResourceDetails?.fileStoreId, request?.body?.ResourceDetails?.tenantId, createAndSearchConfig, undefined, localizationMap)
     let schema: any;
+
     if (type == "facility") {
       logger.info("Fetching schema to validate the created data for type: " + type);
       const mdmsResponse = await callMdmsTypeSchema(request, tenantId, type);
       schema = mdmsResponse
+    }
+    else if (type == "facilityMicroplan") {
+      const mdmsResponse = await callMdmsTypeSchema(request, tenantId, "facility", "microplan");
+      schema = mdmsResponse
+      logger.info("Appending project type to capacity for microplan " + campaignType);
+      schema = await appendProjectTypeToCapacity(schema, campaignType);
     }
     else if (type == "user") {
       logger.info("Fetching schema to validate the created data for type: " + type);

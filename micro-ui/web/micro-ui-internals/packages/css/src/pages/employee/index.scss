@@ -545,12 +545,19 @@ tbody {
     bottom: 2.25rem;
   }
 }
-
+.table.campaign-table {
+  .header-dropdown-menu.showBottom {
+    min-width: 8.6rem;
+  }
+}
+.digit-card-component.bannerCard.removeBottomMargin.languageSelection {
+  width: unset !important;
+}
 .question-card-container {
   width: 100%;
   border: 1px solid #d6d5d4;
   background-color: #fafafa;
-  &.subSection{
+  &.subSection {
     width: 100%;
   }
   .heading-bar {

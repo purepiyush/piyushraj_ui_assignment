@@ -317,6 +317,9 @@ const UploadData = ({ formData, onSelect, ...props }) => {
           const formattedErrors = errors
             .map((error) => {
               let instancePath = error.instancePath || ""; // Assign an empty string if dataPath is not available
+              if (error.instancePath ===  "/Phone Number (Mandatory)" ) {
+                return `${t("HCM_DATA_AT_ROW")} ${index} ${t("HCM_IN_COLUMN")}  ${t("HCM_DATA_SHOULD_BE_10_DIGIT")}`;
+              }
               if (instancePath.startsWith("/")) {
                 instancePath = instancePath.slice(1);
               }
@@ -472,18 +475,19 @@ const UploadData = ({ formData, onSelect, ...props }) => {
       expectedHeaders = XLSX.utils.sheet_to_json(sheet, { header: 1 })[0];
     }
 
-    for (const header of mdmsHeaders) {
-      if (!expectedHeaders.includes(t(header))) {
-        const errorMessage = t("HCM_BOUNDARY_INVALID_SHEET");
-        setErrorsType((prevErrors) => ({
-          ...prevErrors,
-          [type]: errorMessage,
-        }));
-        setIsError(true);
-        isValid = false;
-        break;
-      }
-    }
+
+    // for (const header of mdmsHeaders) {
+    //   if (!expectedHeaders.includes(t(header))) {
+    //     const errorMessage = t("HCM_BOUNDARY_INVALID_SHEET");
+    //     setErrorsType((prevErrors) => ({
+    //       ...prevErrors,
+    //       [type]: errorMessage,
+    //     }));
+    //     setIsError(true);
+    //     isValid = false;
+    //     break;
+    //   }
+    // }
 
     if (!isValid) return isValid;
 
@@ -502,16 +506,16 @@ const UploadData = ({ formData, onSelect, ...props }) => {
       })[0];
 
       // Check if headers match the expected headers
-      if (!arraysEqual(headersToValidate, expectedHeaders)) {
-        const errorMessage = t("HCM_MISSING_HEADERS");
-        setErrorsType((prevErrors) => ({
-          ...prevErrors,
-          [type]: errorMessage,
-        }));
-        setIsError(true);
-        isValid = false;
-        break;
-      }
+      // if (!arraysEqual(headersToValidate, expectedHeaders)) {
+      //   const errorMessage = t("HCM_MISSING_HEADERS");
+      //   setErrorsType((prevErrors) => ({
+      //     ...prevErrors,
+      //     [type]: errorMessage,
+      //   }));
+      //   setIsError(true);
+      //   isValid = false;
+      //   break;
+      // }
     }
 
     if (!isValid) return isValid;
@@ -533,6 +537,8 @@ const UploadData = ({ formData, onSelect, ...props }) => {
       })[0];
 
       const jsonData = XLSX.utils.sheet_to_json(sheet, { blankrows: true });
+      
+      if(jsonData.length == 0) continue;
 
       const boundaryCodeIndex = headersToValidate.indexOf(t("HCM_ADMIN_CONSOLE_BOUNDARY_CODE"));
 
