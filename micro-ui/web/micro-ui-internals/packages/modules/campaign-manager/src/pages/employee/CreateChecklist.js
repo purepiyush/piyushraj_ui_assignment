@@ -44,12 +44,27 @@ const CreateChecklist = () => {
     });
   };
 
+  const buildCode = (item, data) => {
+    if (!item.parentId) {
+        return `SM${item.key}`;
+    }
+
+    const parentItem = data.find(parent => parent.id === item.parentId);
+    const parentCode = buildCode(parentItem, data);
+    const dependencyLabel = item.dependencyAns?.label || ''; // Access the current item's dependencyAns.label
+
+    return `${parentCode}${dependencyLabel ? '.' + dependencyLabel : ''}.SM${item.key}`;
+};
   const payloadData = (data) => {
+
     // attributes structure needs to be redefine for dependency checklist  
     const attributes = data?.map((item, index) => {
+      const code = buildCode(item, data);
+
+    console.log("code" , code);
       return {
         tenantId: tenantId,
-        code: `SM${item?.key}`,
+        code: code,
         dataType: item?.type?.code,
         values: item?.value,
         required: item?.isRequired,
@@ -70,6 +85,7 @@ const CreateChecklist = () => {
 
   // on submit creating checklist. After success adding localisation
   const onSubmit = async (formData) => {
+    console.log("formData" , formData);
     const payload = payloadData(formData?.createQuestion?.questionData);
     await mutate(payload, {
       onError: (error, variables) => {

@@ -222,7 +222,7 @@ const CreateQuestion = ({ onSelect, className, level = 1, initialQuestionData, p
                         select={(value) => {
                           handleUpdateField(value, "dependencyAns", field.key, field.id);
                         }}
-                        placeholder="Type"
+                        placeholder="dependencyAns"
                       />
                     )}
                   </div>
