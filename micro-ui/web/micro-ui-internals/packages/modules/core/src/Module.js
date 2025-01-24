@@ -62,7 +62,7 @@ export const DigitUI = ({ stateCode, registry, enabledModules, moduleReducers, d
     defaultOptions: {
       queries: {
         staleTime: 15 * 60 * 1000,
-        cacheTime: 50 * 60 * 1000,
+        gcTime: 50 * 60 * 1000,
         retry: false,
         retryDelay: (attemptIndex) => Infinity,
         /*

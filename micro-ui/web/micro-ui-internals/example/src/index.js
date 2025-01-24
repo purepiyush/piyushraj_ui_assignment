@@ -91,12 +91,12 @@ const initDigitUI = () => {
   });
   initCoreComponents();
   //initDSSComponents();
-  initHRMSComponents();
-  initUtilitiesComponents();
-  initWorkbenchComponents();
-  initPGRComponents();
-  initOpenPaymentComponents();
-  initSandboxComponents();
+  // initHRMSComponents();
+  // initUtilitiesComponents();
+  // initWorkbenchComponents();
+  // initPGRComponents();
+  // initOpenPaymentComponents();
+  // initSandboxComponents();
 
   const moduleReducers = (initData) => ({
     pgr: PGRReducers(initData),
