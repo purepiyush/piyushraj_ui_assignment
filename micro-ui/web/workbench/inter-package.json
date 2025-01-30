@@ -22,8 +22,10 @@
     "publish:css": "cd packages/css && yarn publish --access public",
     "dev:example": "cd example && yarn start",
     "dev:sample": "cd packages/modules/sample && yarn start",
+    "dev:core": "cd packages/modules/core && yarn start",
     "build": "run-p build:**",
     "build:sample": "cd packages/modules/sample && yarn build",
+    "build:core": "cd packages/modules/core && yarn build",
     "deploy:jenkins": "./scripts/jenkins.sh",
     "clean": "rm -rf node_modules"
   },

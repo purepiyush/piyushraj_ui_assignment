@@ -11,7 +11,21 @@ module.exports = {
     rules: [
       {
         test: /\.(js)$/,
-        use: ["babel-loader"],
+        use: [
+          {
+            loader: "babel-loader",
+            options: {
+              presets: [
+                "@babel/preset-env",   // Transpile modern JavaScript
+                "@babel/preset-react"  // React JSX support
+              ],
+              plugins: [
+                "@babel/plugin-proposal-optional-chaining",
+                "@babel/plugin-proposal-nullish-coalescing-operator"  // Support optional chaining (?.)
+              ]
+            }
+          }
+        ],
       },
       {
         test: /\.css$/i,
@@ -26,13 +40,13 @@ module.exports = {
   },
   optimization: {
     splitChunks: {
-      chunks: 'all',
-      minSize:20000,
-      maxSize:50000,
-      enforceSizeThreshold:50000,
-      minChunks:1,
-      maxAsyncRequests:30,
-      maxInitialRequests:30
+      chunks: "all",
+      minSize: 20000,
+      maxSize: 50000,
+      enforceSizeThreshold: 50000,
+      minChunks: 1,
+      maxAsyncRequests: 30,
+      maxInitialRequests: 30,
     },
   },
   plugins: [

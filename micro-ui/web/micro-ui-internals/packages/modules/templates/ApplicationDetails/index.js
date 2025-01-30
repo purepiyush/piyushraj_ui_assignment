@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQueryClient } from "react-query";
-import { format } from "date-fns";
+//import { format } from "date-fns";
 
 import { Loader } from "@egovernments/digit-ui-react-components";
 
@@ -275,7 +275,7 @@ const ApplicationDetails = (props) => {
               header: response?.header,
               message: response?.message,
               info: t("ATM_REGISTER_ID_WEEK"),
-              id: `${musterRoll.registerId} | ${format(new Date(musterRoll.startDate), "dd/MM/yyyy")} - ${format(new Date(musterRoll.endDate), "dd/MM/yyyy")}`,
+              //id: `${musterRoll.registerId} | ${format(new Date(musterRoll.startDate), "dd/MM/yyyy")} - ${format(new Date(musterRoll.endDate), "dd/MM/yyyy")}`,
             }
             history.push(`/${window.contextPath}/employee/attendencemgmt/response`, state)
           }

@@ -3,12 +3,12 @@ import ReactDOM from "react-dom";
 
 import { initLibraries } from "@egovernments/digit-ui-libraries";
 // import { paymentConfigs, PaymentLinks, PaymentModule } from "@egovernments/digit-ui-module-common";
-import { DigitUI } from "@egovernments/digit-ui-module-core";
-import "@egovernments/digit-ui-sample-css/example/index.css";
+import { DigitUI, initCoreComponents } from "@egovernments/digit-ui-module-core";
+// import "@egovernments/digit-ui-sample-css/example/index.css";
 
 import { pgrCustomizations } from "./pgr";
 import { UICustomizations } from "./UICustomizations";
-import { initUtilitiesComponents } from "@egovernments/digit-ui-module-utilities";
+// import { initUtilitiesComponents } from "@egovernments/digit-ui-module-utilities";
 import {initSampleComponents} from "@egovernments/digit-ui-module-sample";
 
 var Digit = window.Digit || {};
@@ -21,7 +21,8 @@ const enabledModules = [
   //  "Engagement", "NDSS","QuickPayLinks", "Payment",
   "Utilities",
   "Microplanning",
-  "Sample"
+  "Sample",
+  "Core"
   //added to check fsm
   // "FSM"
 ];
@@ -66,6 +67,7 @@ const initDigitUI = () => {
 
   initUtilitiesComponents();
   initSampleComponents();
+  initCoreComponents();
 
   const moduleReducers = (initData) => initData;
 

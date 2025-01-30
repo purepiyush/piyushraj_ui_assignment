@@ -1,6 +1,6 @@
 // import cloneDeep from "lodash/cloneDeep";
 import _ from "lodash";
-import { format } from "date-fns";
+//import { format } from "date-fns";
 // import HrmsService from "../../elements/HRMS";
 // import { convertEpochToDate } from "../../../utils/pt";
 
@@ -29,10 +29,10 @@ export const WorksSearch = {
             { title: "EVENTS_NAME_LABEL", value: estimate?.name },
             { title: "EVENTS_CATEGORY_LABEL", value: estimate?.wfStatus },
             { title: "EVENTS_DESCRIPTION_LABEL", value: estimate?.id },
-            { title: "EVENTS_FROM_DATE_LABEL", value: format(new Date(estimate?.auditDetails?.createdTime), 'dd/MM/yyyy') },
-            { title: "EVENTS_TO_DATE_LABEL", value: format(new Date(estimate?.auditDetails?.createdTime), 'dd/MM/yyyy') },
-            { title: "EVENTS_FROM_TIME_LABEL", value: format(new Date(estimate?.auditDetails?.lastModifiedTime), 'hh:mm'), skip: true },
-            { title: "EVENTS_TO_TIME_LABEL", value: format(new Date(estimate?.auditDetails?.lastModifiedTime), 'hh:mm'), skip: true },
+            { title: "EVENTS_FROM_DATE_LABEL", value: new Date(estimate?.auditDetails?.createdTime) },
+            { title: "EVENTS_TO_DATE_LABEL", value: new Date(estimate?.auditDetails?.createdTime) },
+            { title: "EVENTS_FROM_TIME_LABEL", value: new Date(estimate?.auditDetails?.lastModifiedTime), skip: true },
+            { title: "EVENTS_TO_TIME_LABEL", value: new Date(estimate?.auditDetails?.lastModifiedTime), skip: true },
             { title: "EVENTS_ADDRESS_LABEL", value: estimate?.additionalDetails?.ward },
             { title: "EVENTS_MAP_LABEL",
               map: true,
