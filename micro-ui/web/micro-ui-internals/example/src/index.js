@@ -1,16 +1,16 @@
 import React from "react";
 import ReactDOM from "react-dom";
+import process from "process";
 
 import { initLibraries } from "@egovernments/digit-ui-libraries";
 // import { paymentConfigs, PaymentLinks, PaymentModule } from "@egovernments/digit-ui-module-common";
 import { DigitUI, initCoreComponents } from "@egovernments/digit-ui-module-core";
 // import "@egovernments/digit-ui-sample-css/example/index.css";
-
-import { pgrCustomizations } from "./pgr";
-import { UICustomizations } from "./UICustomizations";
+//import { UICustomizations } from "./UICustomizations";
 // import { initUtilitiesComponents } from "@egovernments/digit-ui-module-utilities";
 import {initSampleComponents} from "@egovernments/digit-ui-module-sample";
 
+window.process = process;
 var Digit = window.Digit || {};
 
 const enabledModules = [
@@ -56,8 +56,8 @@ const initTokens = (stateCode) => {
 const initDigitUI = () => {
   window.contextPath = window?.globalConfigs?.getConfig("CONTEXT_PATH") || "digit-ui";
   window.Digit.Customizations = {
-    PGR: pgrCustomizations,
-    commonUiConfig: UICustomizations
+    // PGR: pgrCustomizations,
+    //commonUiConfig: UICustomizations
   };
   window?.Digit.ComponentRegistryService.setupRegistry({
     // PaymentModule,

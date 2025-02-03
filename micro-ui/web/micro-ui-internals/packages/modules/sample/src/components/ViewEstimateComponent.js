@@ -1,7 +1,7 @@
 import React, { Fragment, useState, useEffect, useRef, } from 'react'
 import { Loader, WorkflowActions, WorkflowTimeline, Toast } from '@egovernments/digit-ui-react-components';
 import { useTranslation } from "react-i18next";
-import ApplicationDetails from '../../../templates/ApplicationDetails';
+// import ApplicationDetails from '../../../templates/ApplicationDetails';
 
 const ViewEstimateComponent = ({editApplicationNumber,...props}) => {
     const [toast, setToast] = useState({show : false, label : "", error : false});

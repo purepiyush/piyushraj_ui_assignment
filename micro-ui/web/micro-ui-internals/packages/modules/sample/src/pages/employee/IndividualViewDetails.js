@@ -1,7 +1,7 @@
 import React, { Fragment, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useHistory } from "react-router-dom";
-import { Button, Header, Loader, ViewComposer } from "@egovernments/digit-ui-react-components";
+// import { Button, Header, Loader, ViewComposer } from "@egovernments/digit-ui-react-components";
 
 const IndividualViewDetails = (props) => {
   const { t } = useTranslation();

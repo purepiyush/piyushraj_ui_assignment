@@ -5,8 +5,8 @@ const Redircter = () => {
   const path = Digit.UserService.getType() === "employee" ? `/${window?.contextPath}/employee/user/error` : `/${window?.contextPath}/citizen/error`;
   if (
     window.location.href.includes("employee/user/error") ||
-    window.location.href.includes("citizen/error") ||
-    process.env.NODE_ENV === "development"
+    window.location.href.includes("citizen/error") 
+    || process.env.NODE_ENV === "development"
   ) {
     //do nothing
   }else{

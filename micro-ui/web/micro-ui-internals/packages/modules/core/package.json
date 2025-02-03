@@ -14,7 +14,7 @@
     "prepublish": "yarn build"
   },
   "dependencies": {
-    "@egovernments/digit-ui-components": "0.0.2-beta.1-webpack.2",
+    "@egovernments/digit-ui-components": "0.0.2-beta.3-webpack.2",
     "@egovernments/digit-ui-react-components": "1.8.4",
     "@tanstack/react-query": "^5.62.16",
     "react": "19.0.0",
@@ -25,6 +25,10 @@
     "react-tooltip": "4.1.2",
     "redux": "4.1.2",
     "redux-thunk": "2.4.1"
+  },
+  "resolutions": {
+    "react": "19.0.0",
+    "react-dom": "19.0.0"
   },
   "author": "JaganKumar <jagan.kumar@egov.org.in>",
   "keywords": [

@@ -49,7 +49,18 @@ module.exports = {
       maxInitialRequests: 30,
     },
   },
+  resolve: {
+    fallback: {
+      process: require.resolve("process/browser"),
+    },
+  },
   plugins: [
+    new webpack.ProvidePlugin({
+      process: "process/browser",
+    }),
+    new webpack.DefinePlugin({
+      "process.env": JSON.stringify(process.env), // Ensures `process.env` works
+    }),
     new CleanWebpackPlugin(),
     // new BundleAnalyzerPlugin(),
     new HtmlWebpackPlugin({ inject: true, template: "public/index.html" }),

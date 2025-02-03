@@ -1,5 +1,5 @@
 import React, { Fragment, useState, useEffect } from "react";
-import { ViewComposer, Header, Loader } from "@egovernments/digit-ui-react-components";
+// import { ViewComposer, Header, Loader } from "@egovernments/digit-ui-react-components";
 import { useTranslation } from "react-i18next";
 import { useLocation } from "react-router-dom";
 import { useIndividualView } from "../hooks/useIndividualView";
